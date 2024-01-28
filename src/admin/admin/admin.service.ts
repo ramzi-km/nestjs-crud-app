@@ -29,4 +29,12 @@ export class AdminService {
 
     return userWithoutPassword;
   }
+
+  getUsers() {
+    return this.userModel.find().select('-password -__v');
+  }
+
+  getUserById(userId: string) {
+    return this.userModel.findById(userId).select('-password -__v');
+  }
 }
