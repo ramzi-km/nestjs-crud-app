@@ -35,8 +35,8 @@ export class AdminService {
     return this.userModel.find().select('-password -__v');
   }
 
-  getUserById(userId: string) {
-    return this.userModel.findById(userId).select('-password -__v');
+  async getUserById(userId: string) {
+    return await this.userModel.findById(userId).select('-password -__v');
   }
 
   updateUser(userId: string, updateUserDto: UpdateUserDto) {
