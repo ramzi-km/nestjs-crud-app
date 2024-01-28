@@ -4,6 +4,7 @@ import * as bcrypt from 'bcrypt';
 import { Model } from 'mongoose';
 import { User } from 'src/schemas/User.schema';
 import { CreateUserDto } from './dto/CreateUser.dto';
+import { UpdateUserDto } from './dto/UpdateUser.dto';
 
 @Injectable()
 export class AdminService {
@@ -36,5 +37,28 @@ export class AdminService {
 
   getUserById(userId: string) {
     return this.userModel.findById(userId).select('-password -__v');
+  }
+
+  updateUser(userId: string, updateUserDto: UpdateUserDto) {
+    const fieldsToAvoid = ['_id', '__v', 'email'];
+
+    const updateObject: UpdateUserDto = {};
+    for (const field in updateUserDto) {
+      if (
+        updateUserDto[field] !== undefined &&
+        !fieldsToAvoid.includes(field)
+      ) {
+        updateObject[field] = updateUserDto[field];
+      }
+    }
+    return this.userModel
+      .findByIdAndUpdate(userId, updateObject, {
+        new: true,
+      })
+      .select('-password -__v');
+  }
+
+  deleteUser(userId: string) {
+    return this.userModel.findByIdAndDelete(userId);
   }
 }
