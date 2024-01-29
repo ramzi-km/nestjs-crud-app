@@ -1,8 +1,14 @@
-import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import {
+  ConflictException,
+  HttpException,
+  HttpStatus,
+  Injectable,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { InjectModel } from '@nestjs/mongoose';
 import * as bcrypt from 'bcrypt';
 import { Model } from 'mongoose';
+import { CreateUserDto } from 'src/admin/admin/dto/CreateUser.dto';
 import { Admin } from 'src/schemas/Admin.schema';
 import { User } from 'src/schemas/User.schema';
 import { ValidateUserDto } from '../dto/validateUser.dto';
@@ -14,6 +20,31 @@ export class AuthService {
     @InjectModel(Admin.name) private adminModel: Model<Admin>,
     private jwtService: JwtService,
   ) {}
+  async userSignup(createUserDto: CreateUserDto) {
+    const existingUser = await this.userModel
+      .findOne({ email: createUserDto.email })
+      .exec();
+    if (existingUser) {
+      throw new ConflictException('User with this email already exists');
+    }
+    const hashedPassword = await bcrypt.hash(createUserDto.password, 10);
+    const newUser = new this.userModel({
+      ...createUserDto,
+      password: hashedPassword,
+    });
+    const savedUser = newUser.save();
+
+    const userWithoutPassword = await this.userModel
+      .findById((await savedUser)._id)
+      .select('-password -__v')
+      .lean();
+    const token = this.jwtService.sign({
+      id: userWithoutPassword._id,
+      role: 'user',
+    });
+
+    return { token, user: userWithoutPassword };
+  }
 
   async validateUser({ email, password }: ValidateUserDto) {
     const user = await this.userModel.findOne({ email });
@@ -28,7 +59,7 @@ export class AuthService {
         id: userWithoutPassword.id,
         role: 'user',
       });
-      return { token, userWithoutPassword };
+      return { token, user: userWithoutPassword };
     } else {
       throw new HttpException('Invalid password', HttpStatus.BAD_REQUEST);
     }
@@ -46,7 +77,7 @@ export class AuthService {
         id: adminWithoutPassword.id,
         role: 'admin',
       });
-      return { token, adminWithoutPassword };
+      return { token, admin: adminWithoutPassword };
     } else {
       throw new HttpException('Invalid password', HttpStatus.BAD_REQUEST);
     }
