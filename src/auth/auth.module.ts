@@ -1,6 +1,7 @@
 import { DynamicModule, Module } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 import { MongooseModule } from '@nestjs/mongoose';
+import { Admin, AdminSchema } from 'src/schemas/Admin.schema';
 import { User, UserSchema } from 'src/schemas/User.schema';
 import { AuthController } from './auth/auth.controller';
 import { AuthService } from './auth/auth.service';
@@ -19,6 +20,10 @@ export class AuthModule {
           {
             name: User.name,
             schema: UserSchema,
+          },
+          {
+            name: Admin.name,
+            schema: AdminSchema,
           },
         ]),
       ],
